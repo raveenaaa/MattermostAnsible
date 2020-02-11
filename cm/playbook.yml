@@ -4,11 +4,22 @@
 
 - hosts: mattermost
   tasks: 
-  - name: Update the system
+  - name: add universe repository for bionic
+    become: yes
+    apt_repository: 
+      repo: deb http://archive.ubuntu.com/ubuntu bionic universe
+      state: present
+  
+  - name: Update the apt-repositories and cache
     become: yes
     apt:
-      upgrade: yes
       update_cache: yes
+      upgrade: yes
+  
+  - name: Wait for 60 seconds and then continue
+    wait_for:
+      timeout: 60
+    delegate_to: localhost
 
   - name: Specify MySQL root password before installing MySQL
     become: yes
@@ -32,10 +43,17 @@
       name: mysql-server
       state: present
 
-  - name: Install Python MySQL
+  - name: Install Pip3
     become: true  
     apt: 
-      name: python-pymysql        
+      name: python-pip     
+      state: present  
+
+  - name: Install PyMySQL using pip3
+    become: true
+    pip:
+      name: PyMySQL
+      state: present
 
   - name: Install Python MySQLDB
     become: true  
@@ -153,12 +171,12 @@
       group: root
       mode: '0777'
 
-  - name: Replace Drivername line in config
+  - name: Replace SiteURL line in config
     become: true
     lineinfile:
       path: /opt/mattermost/config/config.json
-      regexp: '"DriverName"'
-      line: '    "DriverName": "mysql",'
+      regexp: '"SiteURL"'
+      line: '    "SiteURL": "http://192.168.33.80:8065",'
       owner: root
       group: root
       mode: '0777'
@@ -166,7 +184,7 @@
   - name: Setup Mattermost as a systemd service
     become: yes
     copy:
-      dest: /etc/systemd/system/mattermost.service
+      dest: /lib/systemd/system/mattermost.service
       content: |
         [Unit]
         Description=Mattermost
@@ -190,16 +208,33 @@
 
   - name: Load the new unit 
     become: yes
-    tags: 
-    - service
     shell: systemctl daemon-reload
 
   - name: Start the service
     become: yes
-    tags: 
-    - service
     shell: systemctl start mattermost.service
-    
+
+  - name: Enable the service
+    become: yes
+    shell: systemctl enable mattermost.service
+  
+    # Mattermost-CLI. Refactor it into a separate role
+  - name: Create mattermost users
+    become: yes
+    command: chdir=/opt/mattermost ./bin/mattermost user create --email mest@getnada.com --password Strong#Password123 --username mest 
+  
+  - name: Create mattermost team
+    become: yes
+    tags:
+      - create
+    command: chdir=/opt/mattermost ./bin/mattermost team create --name newteam --display_name "My New Team" --email test@getnada.com
+
+  - name: Add members to team
+    become: yes
+    tags:
+      - create
+    command: chdir=/opt/mattermost ./bin/mattermost team add newteam best@getnada.com mest@getnada.com test@getnada.com
+
   handlers:
   - name: restart mysql
     service:
