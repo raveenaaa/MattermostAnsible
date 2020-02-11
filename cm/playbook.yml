@@ -3,5 +3,213 @@
 # https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html
 
 - hosts: mattermost
-  roles:
-    - ping
+  tasks: 
+  - name: Update the system
+    become: yes
+    apt:
+      upgrade: yes
+      update_cache: yes
+
+  - name: Specify MySQL root password before installing MySQL
+    become: yes
+    debconf:
+      name: mysql-server
+      question: mysql-server/root_password
+      value: '123456' 
+      vtype: password
+
+  - name: MySQL root password confirmation
+    become: yes
+    debconf:
+      name: mysql-server
+      question: mysql-server/root_password_again
+      value: '123456' 
+      vtype: password
+
+  - name: Install MySQL server
+    become: yes
+    apt:
+      name: mysql-server
+      state: present
+
+  - name: Install Python MySQL
+    become: true  
+    apt: 
+      name: python-pymysql        
+
+  - name: Install Python MySQLDB
+    become: true  
+    apt: pkg="python-mysqldb" state=present
+
+  - name: Start MySQL
+    become: yes
+    service: 
+      name: mysql
+      state: started
+
+  - name: Deletes anonymous MySQL server user for localhost
+    mysql_user: 
+      user: ""
+      state: "absent" 
+      login_user: "root"
+      login_password: "123456"     
+
+  - name: Secures the MySQL root user for IPV6 localhost (::1)
+    mysql_user: 
+      user: "root" 
+      password: "123456" 
+      host: "::1"
+      login_user: "root"
+      login_password: "123456" 
+
+  - name: Secures the MySQL root user for IPV4 localhost (127.0.0.1)
+    mysql_user: 
+      user: "root" 
+      password: "123456" 
+      host: "127.0.0.1"
+      login_user: "root"
+      login_password: "123456" 
+
+  - name: Secures the MySQL root user for localhost domain (localhost)
+    mysql_user: user="root" password="123456" host="localhost" login_user="root" login_password="123456" 
+
+  - name: Removes the MySQL test database
+    mysql_db: db=test state=absent login_user="root" login_password="123456" 
+
+  - name: Create /root/.my.cnf with root password credentials
+    become: yes
+    copy:
+      dest: "/root/.my.cnf"
+      content: |
+        [client]
+        user=root
+        password=123456
+    notify: restart mysql
+
+  - name: Create Mattermost DB
+    become: yes
+    mysql_db:
+      name: mattermost
+      state: present
+
+  - name: Create Mattermost user mmuser and grant privileges
+    become: yes
+    mysql_user: 
+      name: 'mmuser'
+      host: '%'
+      state: present
+      password: "123456"
+      priv: "mattermost.*:ALL"
+
+  - name: Download and extracting Mattermost server files
+    become: yes
+    unarchive:
+      remote_src: yes
+      src: https://releases.mattermost.com/5.19.1/mattermost-5.19.1-linux-amd64.tar.gz
+      dest: /opt
+
+  - name: Create the storage directory for files
+    become: yes
+    file:
+      path: /opt/mattermost/data
+      state: directory
+      mode: '0755'
+
+  - name: "Create system user: mattermost"
+    become: yes
+    user:
+      name: mattermost
+      state: present
+      system: yes
+
+  - name: "Create system group: mattermost"
+    become: yes
+    group:
+      name: mattermost
+      state: present
+      system: yes
+
+  - name: Set user and group mattermost as the owner of Mattermost files
+    become: yes
+    file:
+      path: /opt/mattermost
+      owner: mattermost
+      group: mattermost
+
+  - name: Give permissions to mattermost group
+    become: yes
+    file:
+      path: /opt/mattermost
+      group: mattermost
+      mode: g+w
+
+  - name: Replace Datasource line in config
+    become: true
+    lineinfile:
+      path: /opt/mattermost/config/config.json
+      regexp: '"DataSource"'
+      line: '    "DataSource": "mmuser:123456@tcp(localhost:3306)/mattermost?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s",'
+      owner: root
+      group: root
+      mode: '0777'
+
+  - name: Replace Drivername line in config
+    become: true
+    lineinfile:
+      path: /opt/mattermost/config/config.json
+      regexp: '"DriverName"'
+      line: '    "DriverName": "mysql",'
+      owner: root
+      group: root
+      mode: '0777'
+  
+  - name: Setup Mattermost as a systemd service
+    become: yes
+    copy:
+      dest: /etc/systemd/system/mattermost.service
+      content: |
+        [Unit]
+        Description=Mattermost
+        After=network.target
+        After=mysql.service
+        Requires=mysql.service
+
+        [Service]
+        Type=notify
+        ExecStart=/opt/mattermost/bin/mattermost
+        TimeoutStartSec=3600
+        Restart=always
+        RestartSec=10
+        WorkingDirectory=/opt/mattermost
+        User=mattermost
+        Group=mattermost
+        LimitNOFILE=49152
+
+        [Install]
+        WantedBy=mysql.service
+
+  - name: Load the new unit 
+    become: yes
+    tags: 
+    - service
+    shell: systemctl daemon-reload
+
+  - name: Start the service
+    become: yes
+    tags: 
+    - service
+    shell: systemctl start mattermost.service
+    
+  handlers:
+  - name: restart mysql
+    service:
+      name: mysql
+      state: restarted
+
+
+
+
+
+
+
+    

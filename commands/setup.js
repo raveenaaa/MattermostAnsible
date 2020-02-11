@@ -50,6 +50,4 @@ async function run(privateKey) {
     result = sshSync('/bakerx/cm/server-init.sh', 'vagrant@192.168.33.10');
     if( result.error ) { console.log(result.error); process.exit( result.status ); }
 
-
-
 }
