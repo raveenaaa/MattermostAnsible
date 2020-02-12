@@ -1,0 +1,23 @@
+---
+# Role that performs mattermost installation and configurations
+# Role that performs changes to /opt/mattermost/config/config.json file
+
+- name: Replace Datasource line in config
+  become: true
+  lineinfile:
+    path: /opt/mattermost/config/config.json
+    regexp: '"DataSource"'
+    line: '    "DataSource": "mmuser:123456@tcp(localhost:3306)/mattermost?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s",'
+    owner: root
+    group: root
+    mode: '0777'
+
+- name: Replace SiteURL line in config
+  become: true
+  lineinfile:
+    path: /opt/mattermost/config/config.json
+    regexp: '"SiteURL"'
+    line: '    "SiteURL": "http://192.168.33.80:8065",'
+    owner: root
+    group: root
+    mode: '0777'

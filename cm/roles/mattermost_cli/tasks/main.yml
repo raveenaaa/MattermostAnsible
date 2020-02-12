@@ -1,0 +1,18 @@
+---
+# Role that creates mattermost teams and users using cli
+
+- name: Create mattermost users
+  become: yes
+  command: chdir=/opt/mattermost ./bin/mattermost user create --email mest@getnada.com --password Strong#Password123 --username mest 
+
+- name: Create mattermost team
+  become: yes
+  tags:
+    - create
+  command: chdir=/opt/mattermost ./bin/mattermost team create --name newteam --display_name "My New Team" --email test@getnada.com
+
+- name: Add members to team
+  become: yes
+  tags:
+    - create
+  command: chdir=/opt/mattermost ./bin/mattermost team add newteam best@getnada.com mest@getnada.com test@getnada.com

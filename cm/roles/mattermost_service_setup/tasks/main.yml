@@ -1,0 +1,39 @@
+---
+# Role that performs mattermost installation and configurations
+
+- name: Setup Mattermost as a systemd service
+  become: yes
+  copy:
+    dest: /lib/systemd/system/mattermost.service
+    content: |
+      [Unit]
+      Description=Mattermost
+      After=network.target
+      After=mysql.service
+      Requires=mysql.service
+
+      [Service]
+      Type=notify
+      ExecStart=/opt/mattermost/bin/mattermost
+      TimeoutStartSec=3600
+      Restart=always
+      RestartSec=10
+      WorkingDirectory=/opt/mattermost
+      User=mattermost
+      Group=mattermost
+      LimitNOFILE=49152
+
+      [Install]
+      WantedBy=mysql.service
+
+- name: Load the new unit 
+  become: yes
+  shell: systemctl daemon-reload
+
+- name: Start the service
+  become: yes
+  shell: systemctl start mattermost.service
+
+- name: Enable the service
+  become: yes
+  shell: systemctl enable mattermost.service

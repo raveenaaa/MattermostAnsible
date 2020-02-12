@@ -1,0 +1,41 @@
+---
+# Role that performs pre-configurations for mysql
+# Also installs mysql dependencies and mysql itself
+
+- name: Specify MySQL root password before installing MySQL
+  become: yes
+  debconf:
+    name: mysql-server
+    question: mysql-server/root_password
+    value: '123456' 
+    vtype: password
+
+- name: MySQL root password confirmation
+  become: yes
+  debconf:
+    name: mysql-server
+    question: mysql-server/root_password_again
+    value: '123456' 
+    vtype: password
+
+- name: Install MySQL server
+  become: yes
+  apt:
+    name: mysql-server
+    state: present
+
+- name: Install pip
+  become: true
+  apt:
+    name: python3-pip
+    state: present
+
+- name: Install pymysql using pip
+  become: true 
+  pip:
+    name: pymysql
+    state: present
+    
+- name: Install Python MySQLDB
+  become: true  
+  apt: pkg="python-mysqldb" state=present

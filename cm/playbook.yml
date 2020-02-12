@@ -1,99 +1,22 @@
 ---
 # see the best practices in ansible docs for how to get started with creating roles etc.: 
 # https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html
-
+#Secure passwords 
 - hosts: mattermost
-  tasks: 
-  - name: add universe repository for bionic
-    become: yes
-    apt_repository: 
-      repo: deb http://archive.ubuntu.com/ubuntu bionic universe
-      state: present
-  
+  tasks:   
   - name: Update the apt-repositories and cache
     become: yes
     apt:
       update_cache: yes
       upgrade: yes
   
-  - name: Wait for 60 seconds and then continue
-    wait_for:
-      timeout: 60
-    delegate_to: localhost
+- hosts: mattermost
+  roles:
+  - mysql_setup
+  - mysql_cleanup 
 
-  - name: Specify MySQL root password before installing MySQL
-    become: yes
-    debconf:
-      name: mysql-server
-      question: mysql-server/root_password
-      value: '123456' 
-      vtype: password
-
-  - name: MySQL root password confirmation
-    become: yes
-    debconf:
-      name: mysql-server
-      question: mysql-server/root_password_again
-      value: '123456' 
-      vtype: password
-
-  - name: Install MySQL server
-    become: yes
-    apt:
-      name: mysql-server
-      state: present
-
-  - name: Install Pip3
-    become: true  
-    apt: 
-      name: python-pip     
-      state: present  
-
-  - name: Install PyMySQL using pip3
-    become: true
-    pip:
-      name: PyMySQL
-      state: present
-
-  - name: Install Python MySQLDB
-    become: true  
-    apt: pkg="python-mysqldb" state=present
-
-  - name: Start MySQL
-    become: yes
-    service: 
-      name: mysql
-      state: started
-
-  - name: Deletes anonymous MySQL server user for localhost
-    mysql_user: 
-      user: ""
-      state: "absent" 
-      login_user: "root"
-      login_password: "123456"     
-
-  - name: Secures the MySQL root user for IPV6 localhost (::1)
-    mysql_user: 
-      user: "root" 
-      password: "123456" 
-      host: "::1"
-      login_user: "root"
-      login_password: "123456" 
-
-  - name: Secures the MySQL root user for IPV4 localhost (127.0.0.1)
-    mysql_user: 
-      user: "root" 
-      password: "123456" 
-      host: "127.0.0.1"
-      login_user: "root"
-      login_password: "123456" 
-
-  - name: Secures the MySQL root user for localhost domain (localhost)
-    mysql_user: user="root" password="123456" host="localhost" login_user="root" login_password="123456" 
-
-  - name: Removes the MySQL test database
-    mysql_db: db=test state=absent login_user="root" login_password="123456" 
-
+- hosts: mattermost
+  tasks:
   - name: Create /root/.my.cnf with root password credentials
     become: yes
     copy:
@@ -102,144 +25,13 @@
         [client]
         user=root
         password=123456
-    notify: restart mysql
-
-  - name: Create Mattermost DB
-    become: yes
-    mysql_db:
-      name: mattermost
-      state: present
-
-  - name: Create Mattermost user mmuser and grant privileges
-    become: yes
-    mysql_user: 
-      name: 'mmuser'
-      host: '%'
-      state: present
-      password: "123456"
-      priv: "mattermost.*:ALL"
-
-  - name: Download and extracting Mattermost server files
-    become: yes
-    unarchive:
-      remote_src: yes
-      src: https://releases.mattermost.com/5.19.1/mattermost-5.19.1-linux-amd64.tar.gz
-      dest: /opt
-
-  - name: Create the storage directory for files
-    become: yes
-    file:
-      path: /opt/mattermost/data
-      state: directory
-      mode: '0755'
-
-  - name: "Create system user: mattermost"
-    become: yes
-    user:
-      name: mattermost
-      state: present
-      system: yes
-
-  - name: "Create system group: mattermost"
-    become: yes
-    group:
-      name: mattermost
-      state: present
-      system: yes
-
-  - name: Set user and group mattermost as the owner of Mattermost files
-    become: yes
-    file:
-      path: /opt/mattermost
-      owner: mattermost
-      group: mattermost
-
-  - name: Give permissions to mattermost group
-    become: yes
-    file:
-      path: /opt/mattermost
-      group: mattermost
-      mode: g+w
-
-  - name: Replace Datasource line in config
-    become: true
-    lineinfile:
-      path: /opt/mattermost/config/config.json
-      regexp: '"DataSource"'
-      line: '    "DataSource": "mmuser:123456@tcp(localhost:3306)/mattermost?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s",'
-      owner: root
-      group: root
-      mode: '0777'
-
-  - name: Replace SiteURL line in config
-    become: true
-    lineinfile:
-      path: /opt/mattermost/config/config.json
-      regexp: '"SiteURL"'
-      line: '    "SiteURL": "http://192.168.33.80:8065",'
-      owner: root
-      group: root
-      mode: '0777'
   
-  - name: Setup Mattermost as a systemd service
-    become: yes
-    copy:
-      dest: /lib/systemd/system/mattermost.service
-      content: |
-        [Unit]
-        Description=Mattermost
-        After=network.target
-        After=mysql.service
-        Requires=mysql.service
-
-        [Service]
-        Type=notify
-        ExecStart=/opt/mattermost/bin/mattermost
-        TimeoutStartSec=3600
-        Restart=always
-        RestartSec=10
-        WorkingDirectory=/opt/mattermost
-        User=mattermost
-        Group=mattermost
-        LimitNOFILE=49152
-
-        [Install]
-        WantedBy=mysql.service
-
-  - name: Load the new unit 
-    become: yes
-    shell: systemctl daemon-reload
-
-  - name: Start the service
-    become: yes
-    shell: systemctl start mattermost.service
-
-  - name: Enable the service
-    become: yes
-    shell: systemctl enable mattermost.service
-  
-    # Mattermost-CLI. Refactor it into a separate role
-  - name: Create mattermost users
-    become: yes
-    command: chdir=/opt/mattermost ./bin/mattermost user create --email mest@getnada.com --password Strong#Password123 --username mest 
-  
-  - name: Create mattermost team
-    become: yes
-    tags:
-      - create
-    command: chdir=/opt/mattermost ./bin/mattermost team create --name newteam --display_name "My New Team" --email test@getnada.com
-
-  - name: Add members to team
-    become: yes
-    tags:
-      - create
-    command: chdir=/opt/mattermost ./bin/mattermost team add newteam best@getnada.com mest@getnada.com test@getnada.com
-
-  handlers:
-  - name: restart mysql
-    service:
-      name: mysql
-      state: restarted
+- hosts: mattermost
+  roles:
+  - mattermost_setup
+  - config_changes
+  - mattermost_service_setup
+  - mattermost_cli
 
 
 

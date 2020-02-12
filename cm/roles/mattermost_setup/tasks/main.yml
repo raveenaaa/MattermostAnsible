@@ -1,0 +1,59 @@
+---
+# Role that performs mattermost installation and configurations
+
+- name: Create Mattermost DB
+  become: yes
+  mysql_db:
+    name: mattermost
+    state: present
+
+- name: Create Mattermost user mmuser and grant privileges
+  become: yes
+  mysql_user: 
+    name: 'mmuser'
+    host: '%'
+    state: present
+    password: "123456"
+    priv: "mattermost.*:ALL"
+
+- name: Download and extracting Mattermost server files
+  become: yes
+  unarchive:
+    remote_src: yes
+    src: https://releases.mattermost.com/5.19.1/mattermost-5.19.1-linux-amd64.tar.gz
+    dest: /opt
+
+- name: Create the storage directory for files
+  become: yes
+  file:
+    path: /opt/mattermost/data
+    state: directory
+    mode: '0755'
+
+- name: "Create system user: mattermost"
+  become: yes
+  user:
+    name: mattermost
+    state: present
+    system: yes
+
+- name: "Create system group: mattermost"
+  become: yes
+  group:
+    name: mattermost
+    state: present
+    system: yes
+
+- name: Set user and group mattermost as the owner of Mattermost files
+  become: yes
+  file:
+    path: /opt/mattermost
+    owner: mattermost
+    group: mattermost
+
+- name: Give permissions to mattermost group
+  become: yes
+  file:
+    path: /opt/mattermost
+    group: mattermost
+    mode: g+w
