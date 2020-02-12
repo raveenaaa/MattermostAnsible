@@ -3,6 +3,7 @@ const chalk = require('chalk');
 const path = require('path');
 const os = require('os');
 
+const password = process.env.MATTERMOST_PWD
 const scpSync = require('../lib/scp');
 const sshSync = require('../lib/ssh');
 
@@ -13,23 +14,30 @@ exports.builder = yargs => {
         privateKey: {
             describe: 'Install the provided private key on the configuration server',
             type: 'string'
+        },
+
+        vaultpass: {
+            alias: 'vp',
+            describe: 'the password to be used to encrypt ansible vault',
+            default: 'password',
+            type: 'string'
         }
     });
 };
 
 
 exports.handler = async argv => {
-    const { privateKey } = argv;
+    const { privateKey, vaultpass } = argv;
 
     (async () => {
 
-        await run( privateKey );
+        await run( privateKey, vaultpass );
 
     })();
 
 };
 
-async function run(privateKey) {
+async function run(privateKey, vaultpass) {
 
     console.log(chalk.greenBright('Installing configuration server!'));
 
@@ -47,7 +55,11 @@ async function run(privateKey) {
     if( result.error ) { console.log(result.error); process.exit( result.status ); }
 
     console.log(chalk.blueBright('Running init script...'));
-    result = sshSync('/bakerx/cm/server-init.sh', 'vagrant@192.168.33.10');
+    result = sshSync('/bakerx/cm/server-init.sh', 'vagrant@192.168.33.10', password, vaultpass);
+    if( result.error ) { console.log(result.error); process.exit( result.status ); }
+
+    // Securing the ansible-vault using vaultpass
+    result = sshSync('/bakerx/cm/vault-setup.sh', 'vagrant@192.168.33.10', vaultpass);
     if( result.error ) { console.log(result.error); process.exit( result.status ); }
 
 }

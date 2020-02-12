@@ -7,7 +7,7 @@
   debconf:
     name: mysql-server
     question: mysql-server/root_password
-    value: '123456' 
+    value: '{{ password }}' 
     vtype: password
 
 - name: MySQL root password confirmation
@@ -15,7 +15,7 @@
   debconf:
     name: mysql-server
     question: mysql-server/root_password_again
-    value: '123456' 
+    value: '{{ password }}' 
     vtype: password
 
 - name: Install MySQL server

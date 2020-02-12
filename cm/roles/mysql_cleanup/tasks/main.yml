@@ -5,32 +5,32 @@
     user: ""
     state: "absent" 
     login_user: "root"
-    login_password: "123456"     
+    login_password: "{{ password }}"     
 
 - name: Secures the MySQL root user for IPV6 localhost (::1)
   mysql_user: 
     user: "root" 
-    password: "123456" 
+    password: "{{ password }}" 
     host: "::1"
     login_user: "root"
-    login_password: "123456" 
+    login_password: "{{ password }}" 
 
 - name: Secures the MySQL root user for IPV4 localhost (127.0.0.1)
   mysql_user: 
     user: "root" 
-    password: "123456" 
+    password: "{{ password }}" 
     host: "127.0.0.1"
     login_user: "root"
-    login_password: "123456" 
+    login_password: "{{ password }}" 
 
 - name: Secures the MySQL root user for localhost domain (localhost)
-  mysql_user: user="root" password="123456" host="localhost" login_user="root" login_password="123456" 
+  mysql_user: user="root" password="{{ password }}" host="localhost" login_user="root" login_password="{{ password }}" 
 
 - name: Removes the MySQL test database
-  mysql_db: db=test state=absent login_user="root" login_password="123456" 
+  mysql_db: db=test state=absent login_user="root" login_password="{{ password }}" 
 
 - name: Secures the MySQL root user for localhost domain (localhost)
-  mysql_user: user="root" password="123456" host="localhost" login_user="root" login_password="123456" 
+  mysql_user: user="root" password="{{ password }}" host="localhost" login_user="root" login_password="{{ password }}" 
 
 - name: Removes the MySQL test database
-  mysql_db: db=test state=absent login_user="root" login_password="123456" 
+  mysql_db: db=test state=absent login_user="root" login_password="{{ password }}" 

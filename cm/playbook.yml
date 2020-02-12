@@ -1,7 +1,7 @@
 ---
 # see the best practices in ansible docs for how to get started with creating roles etc.: 
 # https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html
-#Secure passwords 
+
 - hosts: mattermost
   tasks:   
   - name: Update the apt-repositories and cache
@@ -11,11 +11,15 @@
       upgrade: yes
   
 - hosts: mattermost
+  vars:
+    password: "{{ lookup('file', '/tmp/password.txt') }}"
   roles:
   - mysql_setup
   - mysql_cleanup 
 
 - hosts: mattermost
+  vars:
+    password: "{{ lookup('file', '/tmp/password.txt') }}"
   tasks:
   - name: Create /root/.my.cnf with root password credentials
     become: yes
@@ -24,9 +28,11 @@
       content: |
         [client]
         user=root
-        password=123456
+        password={{ password }}
   
 - hosts: mattermost
+  vars:
+    password: "{{ lookup('file', '/tmp/password.txt') }}"
   roles:
   - mattermost_setup
   - config_changes

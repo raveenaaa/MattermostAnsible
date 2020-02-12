@@ -14,7 +14,7 @@ exports.builder = yargs => {
 
 
 exports.handler = async argv => {
-    const { file, inventory } = argv;
+    const { file, inventory} = argv;
 
     (async () => {
 
