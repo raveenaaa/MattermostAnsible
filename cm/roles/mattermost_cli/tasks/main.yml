@@ -23,4 +23,4 @@
   become: yes
   tags:
     - create
-  command: chdir=/opt/mattermost ./bin/mattermost team add newteam best@getnada.com pest@getnada.com test@getnada.com
+  command: chdir=/opt/mattermost ./bin/mattermost team add testteam best@getnada.com pest@getnada.com test@getnada.com
