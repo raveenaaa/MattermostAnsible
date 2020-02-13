@@ -31,8 +31,6 @@
         password={{ password }}
   
 - hosts: mattermost
-  vars:
-    password: "{{ lookup('file', '/tmp/password.txt') }}"
   roles:
   - mattermost_setup
   - config_changes
