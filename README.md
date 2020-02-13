@@ -1,68 +1,30 @@
-# HW2-Template
+# CSC 519: DevOps HW 2
 
-### Get started
+To configure and set up mattermost on Ubuntu 18.04 using Ansible
 
-Clone this repo:
+## Preparing the GitHUb Repo.
 
+### Clone and set-url
+Clone the following repo. Then modify the remote so that it now will point to HW2-DevOps repo.
 ```bash
 git clone https://github.com/CSC-DevOps/CM-Template
-```
-
-Create a private `HW2-DevOps` GitHub repo, change the remote url of the repo you just cloned, and push:
-
-```bash
-git remote set-url origin https://github.ncsu.edu/<unityid>/HW2-DevOps
+git remote set-url origin https://github.ncsu.edu/rmdcosta>/HW2-DevOps
 git push -u origin master
 ```
 
-Install the node.js packages.
-
+### Install the node.js packages.
 ```
 npm install
 npm link
 ```
 
-You can run the `cm setup` command to help you:
+## Running the commands:
 
-1. Provision the configuration server VM (with ip, sync folders)
-2. Provision the mattermost VM (with ip)
-3. Copy over the private key for the mattermost VM.
-4. Install ansible on the config server.
+### `cm setup` 
+This command will set-up the ansible server and the mattermost server. It will also set-up the passwords for the mattermost users and the vault password.
 
-*Note*: You must run `cm setup` while your cwd is inside the HW2-DevOps folder in order for the current sync path to be setup.
-
-The output should be similiar to the following:
-```bash
-$ cm setup
-Installing configuration server!
-Provisioning configuration server...
-Creating ansible-srv using vbox...
-⠋ Waiting for VM network to initialize... (can take a few seconds or minutes on slower hosts).
-received from ssh server:  SSH-2.0-OpenSSH_7.6p1 Ubuntu-4ubuntu0.3
-
-The VM is now ready. You can run this ssh command to connect to it.
-ssh -i "/Users/cjparnin/.bakerx/insecure_private_key" vagrant@127.0.0.1 -p 2004 -o StrictHostKeyChecking=no
-You may also run 'bakerx ssh ansible-srv' to connect to the machine.
-Provisioning mattermost server...
-Creating mattermost-srv using vbox...
-⠋ Waiting for VM network to initialize... (can take a few seconds or minutes on slower hosts).
-received from ssh server:  SSH-2.0-OpenSSH_7.6p1 Ubuntu-4ubuntu0.3
-
-The VM is now ready. You can run this ssh command to connect to it.
-ssh -i "/Users/cjparnin/.bakerx/insecure_private_key" vagrant@127.0.0.1 -p 2005 -o StrictHostKeyChecking=no
-You may also run 'bakerx ssh mattermost-srv' to connect to the machine.
-Installing privateKey on configuration server
-Warning: Permanently added '192.168.33.10' (ECDSA) to the list of known hosts.
-insecure_private_key                                                                                                                    100% 1675     2.0MB/s   00:00    
-Running init script...
-Warning: Permanently added '192.168.33.10' (ECDSA) to the list of known hosts.
-+ sudo add-apt-repository ppa:ansible/ansible -y
-Reading package lists...
-+ sudo apt-get update
-+ sudo apt-get install ansible -y
-Reading package lists...
-...
-```
+# Important:
+Before you can run the `cm setup` command, you must add an environment variable named `MATTERMOST_PWD`. The value of this variable will be used to secure the mattermost database and directories.
 
 You can also run `cm playbook cm/playbook.yml cm/inventory.ini`.
 
