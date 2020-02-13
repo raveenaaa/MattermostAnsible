@@ -18,48 +18,27 @@ npm install
 npm link
 ```
 
-## Running the commands:
-
-### `cm setup` 
-This command will set-up the ansible server and the mattermost server. It will also set-up the passwords for the mattermost users and the vault password.
-
-# Important:
+### Setting the environment variable
 Before you can run the `cm setup` command, you must add an environment variable named `MATTERMOST_PWD`. The value of this variable will be used to secure the mattermost database and directories.
 
-You can also run `cm playbook cm/playbook.yml cm/inventory.ini`.
+### Running the commands:
+`cm setup` 
+This command will set-up the ansible server and the mattermost server. It will also set-up the passwords for the mattermost users and the vault password. It invokes the `server-init.sh` and `vault-setup.sh` scripts. While running this command you have the option of specifying the #vault-password# as an argument while running the command. This password is used to lock the ansible-vault which contains the mattermost user password. If nothing is provided it will be set to default.
+
+`cm playbook cm/playbook.yml cm/inventory.ini`
+This command runs the ansible playbook. This command is given the vault-password using the `--vault-password-file` argument. 
 
 If everything is working correctly, you should see that you can run your playbook and successfully ping the mattermost VM.
-```
-cjparnin at MacBookPro in ~/classes/csc-devops-staff/hw2 on master [!]
-$ cm playbook cm/playbook.yml cm/inventory.ini 
-Running ansible script...
-Warning: Permanently added '192.168.33.10' (ECDSA) to the list of known hosts.
-+ '[' 2 -ge 2 ']'
-+ PLAYBOOK=/bakerx/cm/playbook.yml
-+ INVENTORY=/bakerx/cm/inventory.ini
-+ ansible-playbook /bakerx/cm/playbook.yml -i /bakerx/cm/inventory.ini
 
-PLAY [mattermost] **************************************************************
-
-TASK [Gathering Facts] *********************************************************
-ok: [192.168.33.80]
-
-TASK [ping : ping the webserver] ***********************************************
-ok: [192.168.33.80]
-
-PLAY RECAP *********************************************************************
-192.168.33.80              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-```
-
-#### Check progress
+### Check progress
 
 You can check your progress by running:
 ```bash
 opunit verify -i test/inventory.yml
 ```
+### Extra-credit: Mattermost-CLI
 
-### What is in this template repo
+The teams and users have been created using mattermost-cli. The code for this can be found in `roles/mattermost-cli`
 
-Similar to hw1 (V), here you have a cli node app called `cm`. The commands are defined in `./commands` directory, and your configuration management (Ansible) scripts are to be added in `./cm`. 
-
-In `./cm` we included a template for the files you will need (`playbook.yml`, and `inventory.ini`), as well as an example for Ansible roles (`./cm/roles/ping`). 
+### Video:
+* https://youtu.be/HFOva5XWkrE
