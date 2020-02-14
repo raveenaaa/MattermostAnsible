@@ -3,7 +3,14 @@ const chalk = require('chalk');
 const path = require('path');
 const os = require('os');
 
-const password = process.env.MATTERMOST_PWD
+// The default value for Mattermost password
+// Used when env variable MATTERMOST_PWD is not set
+var password = 'mattermostPassword'
+
+if (process.env.MATTERMOST_PWD) {
+    password = process.env.MATTERMOST_PWD
+}
+
 const scpSync = require('../lib/scp');
 const sshSync = require('../lib/ssh');
 
