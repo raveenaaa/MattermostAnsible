@@ -1,6 +1,4 @@
-# CSC 519: DevOps HW 2
-
-To configure and set up mattermost on Ubuntu 18.04 using Ansible
+# Configuration of Mattermost on Ubuntu 18.04 using Ansible
 
 ## Preparing the GitHUb Repo.
 
@@ -33,14 +31,7 @@ This command runs the ansible playbook. This command is given the vault-password
 
 If everything is working correctly, you should see that you can run your playbook and successfully ping the mattermost VM.
 
-### Check progress
-
-You can check your progress by running:
-```bash
-opunit verify -i test/inventory.yml
-```
-
-### Extra-credit: Mattermost-CLI
+### Mattermost-CLI
 
 The teams and users have been created using mattermost-cli. The code for this can be found in `roles/mattermost-cli`
 
